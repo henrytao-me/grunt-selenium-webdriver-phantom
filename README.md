@@ -23,7 +23,12 @@ grunt.loadNpmTasks('grunt-selenium-webdriver-phantom');
 npm install phantomjs --save-dev
 npm install protractor --save-dev
 ./node_modules/protractor/bin/webdriver-manager update --standalone --chrome
+```
+(Belows are optional. Please see the example part)
 
+```
+npm install grunt-shell --save-dev
+npm install grunt-protractor-runner --save-dev
 ```
 
 
@@ -48,6 +53,13 @@ grunt.initConfig({
     }
   },
 });
+```
+
+### Importance default stop selenium server grunt task (check )
+
+```
+grunt.registerTask('test:protractor', ['selenium_webdriver_phantom:stop']);
+
 ```
 
 ### Options
@@ -87,6 +99,22 @@ An array that is used to run phantomjs server.
 
 ```
 grunt.initConfig({
+  protractor: {
+	options: {
+	  keepAlive: true
+    },
+    all: {
+      configFile: 'test-protractor.conf.js'
+    }
+  },
+  shell: {
+	protractor_webdriver_manager_update: {
+	  options: {
+		stdout: true
+	  },
+      command: require('path').resolve(__dirname, 'node_modules', 'protractor', 'bin', 'webdriver-manager') + ' update'
+	}
+  },
   selenium_webdriver_phantom: {
     chrome: {
 	
@@ -110,6 +138,9 @@ grunt.initConfig({
     },
   },
 });
+
+grunt.registerTask('test:protractor', ['shell:protractor_webdriver_manager_update', 'selenium_webdriver_phantom:phantom', 'protractor', 'selenium_webdriver_phantom:stop']);
+
 ```
 
 
