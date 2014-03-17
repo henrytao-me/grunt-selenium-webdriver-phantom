@@ -190,12 +190,12 @@ module.exports = function(grunt) {
 
         // protractor info
         var protractor = {};
-        protractor.path = require('path').resolve(__dirname, '..', 'node_modules', 'protractor');
+        protractor.path = require('path').resolve(__dirname, '..', '..', 'protractor');
         protractor.package = require(require('path').resolve(protractor.path, 'package.json'));
 
         // phantom info
         var phantom = {};
-        phantom.path = require('path').resolve(__dirname, '..', 'node_modules', 'phantomjs');
+        phantom.path = require('path').resolve(__dirname, '..', '..', 'phantomjs');
 
         // init options
         options = this.options({
