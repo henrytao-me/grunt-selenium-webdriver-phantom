@@ -1,7 +1,7 @@
 {
   "name": "grunt-selenium-webdriver-phantom",
   "description": "grunt-selenium-webdriver-phantom support",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "homepage": "https://github.com/henrytao-me/grunt-selenium-webdriver-phantom",
   "author": {
     "name": "Henry Tao",

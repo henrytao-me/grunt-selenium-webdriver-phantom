@@ -212,7 +212,7 @@ module.exports = function(grunt) {
         } else {
             // set phantom default variables
             options.phantom.path = options.phantom.path || require('path').resolve(phantom.path, 'bin', 'phantomjs');
-            options.phantom.args = options.phantom.args || ['--webdriver', '8080', '--webdriver-selenium-grid-hub=http://127.0.0.1:4444'];
+            options.phantom.args = options.phantom.args || ['--webdriver=8080', '--webdriver-selenium-grid-hub=http://127.0.0.1:4444'];
 
             // start selenium with phantom support
             return start(done, true);
