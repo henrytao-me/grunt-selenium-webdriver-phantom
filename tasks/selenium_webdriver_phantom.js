@@ -64,11 +64,12 @@ function start(next, isHeadless) {
 
     // init jar directory
     selOptions.push(options.path);
-    selOptions = selOptions.concat(options.args);
 
     if (isHeadless) {
         selOptions.push('-role');
         selOptions.push('hub');
+    } else {
+        selOptions = selOptions.concat(options.args);
     };
 
     seleniumServerProcess = spawn('java', selOptions);
