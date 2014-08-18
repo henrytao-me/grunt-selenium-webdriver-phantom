@@ -14,9 +14,11 @@ var spawn = require('child_process').spawn,
     started = false,
     os = require('os'),
     fs = require('fs'),
+    path = require('path'),
 
     selOptions = ['-jar'],
     seleniumServerProcess = null,
+    log = null,
 
     phantomLoc = __dirname,
     phantomProcess = null;
@@ -37,6 +39,7 @@ function startPhantom(next) {
     phantomProcess.stdout.setEncoding('utf8');
     // wait for client ready message before proceeding
     phantomProcess.stdout.on('data', function(msg) {
+        log.verbose.writeln('Phantom: '+msg);
         // look for msg that indicates it's ready and then stop logging messages
         if (!started && msg.indexOf('Registered with grid') > -1) {
             //            console.log ('phantom client ready');
@@ -59,7 +62,7 @@ function startPhantom(next) {
 function start(next, isHeadless) {
 
     if (started) {
-        return next(console.log('already started'));
+        return next(log.warn('already started'));
     };
 
     // init jar directory
@@ -89,6 +92,7 @@ function start(next, isHeadless) {
     seleniumServerProcess.stderr.on('data', function(data) {
         var errMsg;
         data = data.trim();
+        log.verbose.writeln('Selenium RC: '+data);
         if (isHeadless) {
             // check for grid started, which is outputted to standard error
             if (data.indexOf('Started SocketConnector') > -1) {
@@ -112,9 +116,10 @@ function start(next, isHeadless) {
     });
     seleniumServerProcess.stdout.setEncoding('utf8');
     seleniumServerProcess.stdout.on('data', function(msg) {
+        log.verbose.writeln('Selenium RC: '+msg);
         // monitor process output for ready message
         if (!started && (msg.indexOf('Started org.openqa.jetty.jetty.servlet.ServletHandler') > -1)) {
-            //            console.log ('seleniumrc server ready');
+            log.debug ('Selenium RC server ready');
             started = true;
             starting = false;
             if (typeof next === 'function') {
@@ -135,23 +140,27 @@ function start(next, isHeadless) {
 function stop(next) {
     if (phantomProcess) {
         seleniumServerProcess.on('close', function(code, signal) {
+            log.debug('Received shutdown signal from selenium RC');
             // this should really resolve both callbacks rather than guessing phantom wrapper will terminate instantly
             if (typeof next === 'function' && !seleniumServerProcess) {
                 next();
             }
         });
         // SIGTERM should ensure processes end cleanly, can do killall -9 java if getting startup errors
+        log.debug('Sending SIGTERM to phantom process');
         phantomProcess.kill('SIGTERM');
         started = false;
         starting = false;
     };
     if (seleniumServerProcess) {
         seleniumServerProcess.on('close', function(code, signal) {
+            log.debug('Received shutdown signal from selenium RC');
             if (typeof next === 'function') {
                 // need to stub out the other callback
                 next();
             };
         });
+        log.debug('Sending SIGTERM to selenium process');
         seleniumServerProcess.kill('SIGTERM');
         started = false;
         starting = false;
@@ -164,6 +173,7 @@ function stop(next) {
  */
 process.on('exit', function onProcessExit() {
     if (started) {
+        log.verbose.writeln('Node process about to exit. Stopping PhantomJS childs.');
         stop();
     }
 });
@@ -176,6 +186,8 @@ process.on('exit', function onProcessExit() {
  * @public
  */
 module.exports = function(grunt) {
+
+    log = grunt.log;
 
     var executableName = function(file) {
         if (os.type() == 'Windows_NT') {
@@ -191,18 +203,18 @@ module.exports = function(grunt) {
 
         // protractor info
         var protractor = {};
-        protractor.path = require('path').resolve(__dirname, '..', '..', 'protractor');
-        protractor.package = require(require('path').resolve(protractor.path, 'package.json'));
+        protractor.path = path.resolve(__dirname, '..', '..', 'protractor');
+        protractor.package = require(path.resolve(protractor.path, 'package.json'));
 
         // phantom info
         var phantom = {};
-        phantom.path = require('path').resolve(__dirname, '..', '..', 'phantomjs');
+        phantom.path = path.resolve(__dirname, '..', '..', 'phantomjs');
 
         // init options
         options = this.options({
-            path: require('path').resolve(protractor.path, 'selenium', 'selenium-server-standalone-' + protractor.package.webdriverVersions.selenium + '.jar'),
+            path: path.resolve(protractor.path, 'selenium', 'selenium-server-standalone-' + protractor.package.webdriverVersions.selenium + '.jar'),
 
-            args: ['-Dwebdriver.chrome.driver=' + require('path').resolve(protractor.path, 'selenium', executableName('chromedriver'))]
+            args: ['-Dwebdriver.chrome.driver=' + path.resolve(protractor.path, 'selenium', executableName('chromedriver'))]
         });
 
         // check if phantom or not
@@ -211,13 +223,15 @@ module.exports = function(grunt) {
             return start(done, false);
 
         } else {
+            var binPath = require(path.join(phantom.path, 'lib', 'phantomjs')).path
             // set phantom default variables
-            options.phantom.path = options.phantom.path || require('path').resolve(phantom.path, 'bin', 'phantomjs');
+            options.phantom.path = options.phantom.path || path.resolve(binPath);
             options.phantom.args = options.phantom.args || ['--webdriver=8080', '--webdriver-selenium-grid-hub=http://127.0.0.1:4444'];
+
+            log.debug('Starting with Phantom Support')
 
             // start selenium with phantom support
             return start(done, true);
-
         };
     });
 
