@@ -200,7 +200,7 @@ module.exports = function(grunt) {
 
         // init options
         options = this.options({
-            path: require('path').resolve(protractor.path, 'selenium', 'selenium-server-standalone-' + protractor.package.webdriverVersions.selenium + '.jar'),
+            path: this.options().path || require('path').resolve(protractor.path, 'selenium', 'selenium-server-standalone-' + protractor.package.webdriverVersions.selenium + '.jar'),
 
             args: ['-Dwebdriver.chrome.driver=' + require('path').resolve(protractor.path, 'selenium', executableName('chromedriver'))]
         });
