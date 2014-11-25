@@ -86,41 +86,39 @@ function start(next, isHeadless) {
 
     seleniumServerProcess.stderr.setEncoding('utf8');
     // parse procee output until server is actually ready, otherwise next task will break
-    seleniumServerProcess.stderr.on('data', function(data) {
-        var errMsg;
-        data = data.trim();
-        if (isHeadless) {
-            // check for grid started, which is outputted to standard error
-            if (data.indexOf('Started SocketConnector') > -1) {
-                //                console.log ('selenium hub ready');
-                return startPhantom(next);
-            } else if (data.indexOf('Address already in use') > -1) {
-                // throw error if already started
-                errMsg = 'FATAL ERROR starting selenium: ' + data + ' maybe try killall -9 java';
-                throw errMsg;
-            }
-        } else if (data &&
-            // throw error if something unexpected happens
-            data.indexOf('org.openqa.grid.selenium.GridLauncher main') === -1 &&
-            data.indexOf('Setting system property') === -1 &&
-            data.indexOf('INFO') === -1 &&
-            data.indexOf('WARNING') === -1 && !started
-        ) {
-            errMsg = 'FATAL ERROR starting selenium: ' + data;
-            throw errMsg;
+    seleniumServerProcess.stderr.on('data', function(msg) {
+      var errMsg;
+      msg = msg.trim();
+      if (isHeadless) {
+        // check for grid started, which is outputted to standard error
+        if (msg.indexOf('Started SocketConnector') > -1) {
+          //                console.log ('selenium hub ready');
+          return startPhantom(next);
+        } else if (msg.indexOf('Address already in use') > -1) {
+          // throw error if already started
+          errMsg = 'FATAL ERROR starting selenium: ' + msg + ' maybe try killall -9 java';
+          throw errMsg;
         }
-    });
-    seleniumServerProcess.stdout.setEncoding('utf8');
-    seleniumServerProcess.stdout.on('data', function(msg) {
-        // monitor process output for ready message
-        if (!started && (msg.indexOf('Started org.openqa.jetty.jetty.servlet.ServletHandler') > -1)) {
-            //            console.log ('seleniumrc server ready');
-            started = true;
-            starting = false;
-            if (typeof next === 'function') {
-                return next();
-            }
+      } else if (msg &&
+        // throw error if something unexpected happens
+        msg.indexOf('org.openqa.grid.selenium.GridLauncher main') === -1 &&
+        msg.indexOf('Setting system property') === -1 &&
+        msg.indexOf('INFO') === -1 &&
+        msg.indexOf('WARNING') === -1 && !started
+      ) {
+        errMsg = 'FATAL ERROR starting selenium: ' + msg;
+        throw errMsg;
+      }
+
+      // monitor process output for ready message
+      if (!started && (msg.indexOf('Started org.openqa.jetty.jetty.servlet.ServletHandler') > -1)) {
+        console.log ('seleniumrc server ready');
+        started = true;
+        starting = false;
+        if (typeof next === 'function') {
+          return next();
         }
+      }
     });
 }
 
